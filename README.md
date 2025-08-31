@@ -1,15 +1,16 @@
 # ChimeraKit
-I've often found myself in a situation where I have to solve a small-ish problem. First, the solution
-might be a simple powershell script, which eventually becomes too large and is then transformed into 
-a .NET application.
+I've often found myself in situations where I have to solve a small-ish problem. First, the solution
+might be a simple powershell script. Eventually, this script becomes larger and larger and supports
+more and more features up until it's a convoluted mess. At this point the script is usually transformed
+into a .NET application to better manage the complexity.
 
-This has resulted in quite a few (potentially super messy) projects which all _kinda_ work but all 
-apply different ways to solve similar issues such as cli parsing. Naturally, this has also resulted
-in copying code from previous projects.
+Obviously, this process has been repeated for each individual problem - again and again. This has resulted in quite 
+a few (potentially super messy) projects which all _kinda_ work but all apply different ways to solve similar issues 
+such as cli parsing. Naturally, this has also resulted in code duplication.
 
-ChimeraKit is an approach to bring order to this mess by providing a framework that hosts various
-independent modules. It allows to quickly add new modules that already support the bare
-minimum required setup such as cli parsing and module-specific configuration.
+ChimeraKit is an approach to bring order to this mess by providing a framework that can host various independent 
+modules. It allows to quickly add new modules that already support the bare minimum (usually required) setup such as 
+cli parsing and configuration.
 
 ## Adding a Module to the Kit
 A new module can be initialized by running:
@@ -25,12 +26,10 @@ The following optional parameters are available:
 In order to properly work with the Kit, modules should be defined in the namespace `ChimeraKit.Module.*`.
 
 ## Overall Configuration
-ChimeraKit can be configured via the `appsettings.json` files in `.\ChimeraKit.Host`. The 
-environment variable `CHIMERAKIT_ENV` allows to use different configurations, depending on the 
-environment.
+ChimeraKit can be configured via an `appsettings.json` file, located in the `ChimeraKit.Host` project. The 
+environment variable `CHIMERAKIT_ENV` allows to use different configurations, depending on the environment.
 
-The following configurations are shared between all modules or required for the `ChimeraKit.Host`
-application:
+The following configurations are shared between all modules or required by the `ChimeraKit.Host` application:
 
 ```json
 {
@@ -46,32 +45,31 @@ application:
 }
 ```
 
-### ModuleRoot and AvailableModules
-This configuration section specifies the available modules for the kit. The `ModuleRoot` points to 
-the directory, where the module dlls (and their dependencies) are stored. The solution is configured 
-such that building it with the `Release` configuration will put the host application in the 
-`/<root>/release/` directory and all modules in the subdirectory `/<root>/release/modules/`. Also, 
-creating a module with the `.\createNewModule.ps1` script, will automatically update the configuration
-to include the new module.
+The `Core` configuration section specifies the modules available to the kit. The `ModuleRoot` points to 
+the directory, where the module dlls (and their dependencies) are built. 
+
+The solution is configured such that building it with the `Release` configuration will put the host application in the 
+`/<root>/release/` directory and all modules in the subdirectory `/<root>/release/modules/`. Also, creating a module 
+with the `.\createNewModule.ps1` script (see below), will automatically update the configuration to include the new 
+module.
 
 ## Running a Module
-A module can be run by invoking the `ChimeraKit.Host.exe` and passing the `ModuleName` and (potential) cli 
-arguments expected by the module. For example:
+A module can be run by invoking the `ChimeraKit.Host.exe` and passing the `ModuleName` and (potential) cli arguments 
+expected by the module. For example:
 
 ```powershell
 .\ChimeraKit.Host.exe ExamplePrepend -i input -p prefix
 ```
 
-Running the host application without any module name will show you a list of available modules.
+Running the host application without any module name or the argument `list` will show you a list of all loaded modules.
 
 ## Module: ExamplePrepend
-This is an example module which demonstrates the usage of ChimeraKit. It defines a simple 
-_module only_ service `IExamplePrependService`, which itself makes use of the shared 
-`IExampleCapitalizationService`.
+This is an example module which demonstrates the usage of ChimeraKit. It defines a simple _module only_  
+`IExamplePrependService`, which itself makes use of the shared `IExampleCapitalizationService`.
 
 ### Configuration
-A module can have its own configuration which is defined in a configuration section in the 
-`appsettings.json` file of `ChimeraKit.Host`:
+A module can have its own "private" configuration which is defined in a configuration section in the `appsettings.json` 
+file of `ChimeraKit.Host`:
 
 ```json
 {
@@ -82,7 +80,7 @@ A module can have its own configuration which is defined in a configuration sect
 ```
 
 ### Running
-Run the module as follows:
+A module can be invoked through the `ChimeraKit.Host` application:
 
 ```powershell
 # long param names
