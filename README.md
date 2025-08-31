@@ -5,15 +5,18 @@ more and more features up until it's a convoluted mess. At this point the script
 into a .NET application to better manage the complexity.
 
 Obviously, this process has been repeated for each individual problem - again and again. This has resulted in quite 
-a few (potentially super messy) projects which all _kinda_ work but all apply different ways to solve similar issues 
-such as cli parsing. Naturally, this has also resulted in code duplication.
+a few (potentially super messy) projects which all _kinda_ work but all apply different approaches to solve similar 
+issues such as cli parsing or logging. Naturally, this has also resulted in code duplication.
 
 ChimeraKit is an approach to bring order to this mess by providing a framework that can host various independent 
-modules. It allows to quickly add new modules that already support the bare minimum (usually required) setup such as 
+modules. It allows to quickly add new modules which with the bare minimum (usually required) setup such as 
 cli parsing and configuration.
 
+_May the Chimera grow to a beautiful beast with various parts that somehow fit together._
+
 ## Adding a Module to the Kit
-A new module can be initialized by running:
+A new module can be initialized by running the helper script (yes, I am aware of the irony, that this is _yet_ 
+another PS script):
 
 ```powershell
 .\createNewModule.ps1 -ModuleName <NewModule>
