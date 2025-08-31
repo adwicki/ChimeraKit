@@ -1,0 +1,19 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "ChimeraKit.Host:ListModules": {
+      "commandName": "Project",
+      "commandLineArgs": "list",
+      "environmentVariables": {
+        "CHIMERAKIT_ENV": "Development"
+      }
+    },
+    "Module:ExamplePrepend": {
+      "commandName": "Project",
+      "commandLineArgs": "ExamplePrepend -i input -p longer_",
+      "environmentVariables": {
+        "CHIMERAKIT_ENV": "Development"
+      }
+    }
+  }
+}
