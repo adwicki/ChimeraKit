@@ -64,7 +64,7 @@ internal class Program
         // Add shared services
         services.AddSingleton<IExampleCapitalizationService, ExampleExampleCapitalizationService>();
         
-        // Add module factory
+        // Add module service factory
         services.AddSingleton<IModuleServiceFactory>(_ => new ModuleServiceFactory(services, configuration));
     }
 
