@@ -23,18 +23,6 @@
         </PackageReference>
     </ItemGroup>
 
-    <Target Name="CopyTestFiles" AfterTargets="Build">
-        <ItemGroup>
-            <TestFilesPrepareSedexInbox Include=".\Module.PrepareSedexInbox\Testfiles\*" />
-            <TestFilesExtractSedexFiles Include=".\Module.ExtractSedexFiles\Testfiles\*" />
-        </ItemGroup>
-
-        <Copy SourceFiles="@(TestFilesPrepareSedexInbox)" DestinationFolder="$(OutputPath)\Testfiles\PrepareSedexInbox" SkipUnchangedFiles="true" />
-        <Copy SourceFiles="@(TestFilesExtractSedexFiles)" DestinationFolder="$(OutputPath)\Testfiles\ExtractSedexFiles" SkipUnchangedFiles="true" />
-
-        <Message Text="Copied testfiles: @(TestFiles)" Importance="high" />
-    </Target>
-
     <ItemGroup>
       <ProjectReference Include="..\..\src\ChimeraKit.Host\ChimeraKit.Host.csproj" />
       <ProjectReference Include="..\..\src\ChimeraKit.Module.ExamplePrepend\ChimeraKit.Module.ExamplePrepend.csproj" />
