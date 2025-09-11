@@ -3,7 +3,6 @@ using ChimeraKit.Module.ExamplePrepend.Cli;
 using ChimeraKit.Module.ExamplePrepend.Configuration;
 using ChimeraKit.Module.ExamplePrepend.Services;
 using ChimeraKit.Tests.Abstractions;
-using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.Extensions;
 

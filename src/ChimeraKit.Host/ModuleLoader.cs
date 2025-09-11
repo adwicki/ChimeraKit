@@ -46,7 +46,7 @@ public class ModuleLoader : IModuleLoader
                 if (Activator.CreateInstance(type) is IModule module)
                 {
                     modules.Add(module);
-                    _logger.LogInformation("Loaded module: {ModuleName}", module.Name);
+                    _logger.LogDebug("Loaded module: {ModuleName}", module.Name);
                 }
                 else
                 {

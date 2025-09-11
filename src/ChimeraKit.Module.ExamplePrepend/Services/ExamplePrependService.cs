@@ -23,14 +23,12 @@ public class ExamplePrependService : IExamplePrependService
 
     public async Task<string> ProcessAsync(ExamplePrependCliArguments args, CancellationToken token)
     {
-        _logger.LogInformation("ExamplePrependService starts processing");
+        _logger.LogDebug("ExamplePrependService starts processing");
 
         string prepended = $"{args.Prefix}{_config.SeparationCharacter}{args.Input}";
         await Task.Delay(100, token);
 
         // Use a service shared between all modules
-        string capitalized = await _exampleCapitalizationService.CapitalizeAsync(prepended);
-        
-        return capitalized;
+        return await _exampleCapitalizationService.CapitalizeAsync(prepended);
     }
 }
