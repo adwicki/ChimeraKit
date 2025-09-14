@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# 
+#
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChimeraKit.Core", "src\ChimeraKit.Core\ChimeraKit.Core.csproj", "{DCE3CA8A-5E5D-4BD7-8AD9-37396AB64CE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChimeraKit.Host", "src\ChimeraKit.Host\ChimeraKit.Host.csproj", "{DF2525CD-07C5-4F38-8EAD-5F6A906E5DAA}"

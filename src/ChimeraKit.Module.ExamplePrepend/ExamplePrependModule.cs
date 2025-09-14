@@ -28,18 +28,18 @@ public class ExamplePrependModule : IModule
     public async Task<ExitCode> ExecuteAsync(IModuleContext context, string[] args)
     {
         ILogger logger = context.Logger;
-        IExamplePrependService moduleService = context.GetService<IExamplePrependService>();
+        var moduleService = context.GetService<IExamplePrependService>();
         ExamplePrependCliArguments cliArgs = ParseCliArguments(args);
 
-        logger.LogInformation("Starting {ModuleName} execution", Name);
+        logger.LogDebug("Starting {ModuleName} execution", Name);
 
         try
         {
             string result = await moduleService.ProcessAsync(cliArgs, context.CancellationToken);
             
-            Console.WriteLine($"ExamplePrepend Result: {result}");
+            logger.LogInformation("ExamplePrepend Result: {Result}", result);
 
-            logger.LogInformation("Module {ModuleName} completed successfully", Name);
+            logger.LogDebug("Module {ModuleName} completed successfully", Name);
             return ExitCode.Ok;
         }
         catch (Exception ex)

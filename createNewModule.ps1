@@ -9,7 +9,6 @@ param(
     [switch]$SkipBuild
 )
 
-# Validate input
 if ($ModuleName -notmatch '^[A-Za-z][A-Za-z0-9]*$') {
     Write-Error "Module name must be alphanumeric and start with a letter"
     exit 1
@@ -23,24 +22,20 @@ Write-Host "Creating new module: $ProjectName" -ForegroundColor Green
 Write-Host "Description: $Description"
 Write-Host ""
 
-# Check if project already exists
 if (Test-Path $ProjectDir) {
     Write-Error "Module $ProjectName already exists at $ProjectDir"
     exit 1
 }
 
 try {
-    # Create the new project
     Write-Host "Creating project..." -ForegroundColor Yellow
     dotnet new classlib -n $ProjectName -o $ProjectDir
     if ($LASTEXITCODE -ne 0) { throw "Failed to create project" }
 
-    # Add to solution
     Write-Host "Adding to solution..." -ForegroundColor Yellow
     dotnet sln add "$ProjectDir\$ProjectName.csproj" --in-root
     if ($LASTEXITCODE -ne 0) { throw "Failed to add to solution" }
 
-    # Update project file
     Write-Host "Updating project file..." -ForegroundColor Yellow
     $projectContent = @"
 <Project Sdk="Microsoft.NET.Sdk">
@@ -76,12 +71,11 @@ try {
 "@
     $projectContent | Out-File -FilePath "$ProjectDir\$ProjectName.csproj" -Encoding UTF8
 
-    # Create directories
     New-Item -ItemType Directory -Path "$ProjectDir\Services" -Force | Out-Null
     New-Item -ItemType Directory -Path "$ProjectDir\Configuration" -Force | Out-Null
     New-Item -ItemType Directory -Path "$ProjectDir\Cli" -Force | Out-Null
 
-    # Create configuration class
+    # Config Class
     Write-Host "Creating configuration class..." -ForegroundColor Yellow
     $configContent = @"
 namespace $ProjectName.Configuration;
@@ -95,7 +89,7 @@ public class $($ModuleName)Configuration
 "@
     $configContent | Out-File -FilePath "$ProjectDir\Configuration\$($ModuleName)Configuration.cs" -Encoding UTF8
 
-    # Create cli arguments class
+    # Cli arguments class
     Write-Host "Creating cli argument class..." -ForegroundColor Yellow
     $configContent = @"
 using CommandLine;
@@ -108,23 +102,20 @@ public class $($ModuleName)CliArguments
         Required = true,
         HelpText = "An input")]
     public required string Input { get; set; }
-    
-    [Option('o', "Output", 
-        Required = true, 
-        HelpText = "An output")]
-    public required string Output { get; set; }
 }
 "@
     $configContent | Out-File -FilePath "$ProjectDir\Cli\$($ModuleName)CliArguments.cs" -Encoding UTF8
 
-    # Create service interface and implementation
+    # Service interface and implementation
     Write-Host "Creating service classes..." -ForegroundColor Yellow
 	$serviceInterfaceContent = @"
+using $ProjectName.Cli;
+	
 namespace $ProjectName.Services;
 
 public interface I$($ModuleName)Service
 {
-    Task<string> ProcessAsync(string input);
+    Task ProcessAsync($($ModuleName)CliArguments args);
 }
 "@
 	$serviceInterfaceContent | Out-File -FilePath "$ProjectDir\Services\I$($ModuleName)Service.cs" -Encoding UTF8
@@ -133,6 +124,7 @@ public interface I$($ModuleName)Service
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using $ProjectName.Configuration;
+using $ProjectName.Cli;
 
 namespace $ProjectName.Services;
 
@@ -149,14 +141,12 @@ public class $($ModuleName)Service : I$($ModuleName)Service
         _config = config;
     }
 
-    public async Task<string> ProcessAsync(string input)
+    public async Task ProcessAsync($($ModuleName)CliArguments args)
     {
-        _logger.LogInformation("$($ModuleName)Service processing: {Input}", input);
+        _logger.LogInformation("$($ModuleName)Service processing: {Input}", args.Input);
 
         // TODO: Implement your module logic here
         await Task.Delay(100); // Simulate processing
-        
-        return `$"Module$ModuleName processed: {input.ToUpper()} (Output: {_config.ModuleSpecificSetting})";
     }
 }
 "@
@@ -196,17 +186,14 @@ public class $($ModuleName)Module : IModule
     public async Task<ExitCode> ExecuteAsync(IModuleContext context, string[] args)
     {
         ILogger logger = context.Logger;
+        logger.LogInformation("Starting {ModuleName} execution", Name);
+        
         I$($ModuleName)Service moduleService = context.GetService<I$($ModuleName)Service>();
         $($ModuleName)CliArguments cliArgs = ParseCliArguments(args);
 
-        logger.LogInformation("Starting {ModuleName} execution", Name);
-
         try
         {
-            string result = await moduleService.ProcessAsync("an input");
-            
-            Console.WriteLine(`$"$ModuleName Result: {result}");
-
+            await moduleService.ProcessAsync(cliArgs);
             logger.LogInformation("Module {ModuleName} completed successfully", Name);
             return ExitCode.Ok;
         }
@@ -244,7 +231,6 @@ public class $($ModuleName)Module : IModule
         Remove-Item $defaultFile
     }
 
-    # Update appsettings.json
     Write-Host "Updating appsettings.json..." -ForegroundColor Yellow
     $appsettingsPath = "src\ChimeraKit.Host\appsettings.json"
     
@@ -270,14 +256,12 @@ public class $($ModuleName)Module : IModule
         Write-Host "Added $ModuleName configuration to appsettings.json" -ForegroundColor Green
     }
     
-    # Update appsettings.Development.json
     Write-Host "Updating appsettings.Development.json..." -ForegroundColor Yellow
     $appsettingsDevPath = "src\ChimeraKit.Host\appsettings.Development.json"
 
     if (Test-Path $appsettingsDevPath) {
         $appsettingsDev = Get-Content $appsettingsDevPath -Raw | ConvertFrom-Json
 
-        # Add to available modules
         $newAvailableModule = @{
             "ModuleName" = $ProjectName
             "ModulePath" = "$ProjectName\bin\Debug\$NetVersion"
@@ -289,7 +273,6 @@ public class $($ModuleName)Module : IModule
         Write-Host "Added $ModuleName configuration to appsettings.Development.json" -ForegroundColor Green
     }
 
-    # Build if requested
     if (-not $SkipBuild) {
         Write-Host "Building solution..." -ForegroundColor Yellow
         dotnet build
@@ -301,12 +284,11 @@ public class $($ModuleName)Module : IModule
     }
 
     Write-Host ""
-    Write-Host "✅ Module $ProjectName created successfully!" -ForegroundColor Green
+    Write-Host "Module $ProjectName created successfully!" -ForegroundColor Green
     Write-Host "Configuration section '$ModuleName' has been added to appsettings.json" -ForegroundColor Yellow
 } catch {
     Write-Error "Failed to create module: $_"
     
-    # Cleanup on error
     if (Test-Path $ProjectDir) {
         Write-Host "Cleaning up..." -ForegroundColor Yellow
         Remove-Item $ProjectDir -Recurse -Force

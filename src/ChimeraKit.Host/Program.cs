@@ -64,16 +64,15 @@ internal class Program
         // Add shared services
         services.AddSingleton<IExampleCapitalizationService, ExampleExampleCapitalizationService>();
         
-        // Add module service factory
         services.AddSingleton<IModuleServiceFactory>(_ => new ModuleServiceFactory(services, configuration));
     }
 
     private static async Task<ExitCode> RunApplicationAsync(IServiceProvider serviceProvider, string[] args)
     {
         ILogger logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-        IModuleLoader moduleLoader = serviceProvider.GetRequiredService<IModuleLoader>();
+        var moduleLoader = serviceProvider.GetRequiredService<IModuleLoader>();
         
-        logger.LogInformation("Starting application execution");
+        logger.LogDebug("Starting application execution");
 
         List<IModule> modules = moduleLoader.LoadModules();
 
@@ -85,10 +84,10 @@ internal class Program
 
         if (args.Length == 0 || args[0] == "list")
         {
-            Console.WriteLine("Available modules:");
+            logger.LogInformation("Available modules:");
             foreach (IModule module in modules)
             {
-                Console.WriteLine($"   {module.Name} - {module.Description}");
+                logger.LogInformation("   {ModuleName} - {ModuleDescription}", module.Name, module.Description);
             }
 
             return ExitCode.Ok;
@@ -104,7 +103,7 @@ internal class Program
             return ExitCode.Error;
         }
         
-        IModuleServiceFactory moduleServiceFactory = serviceProvider.GetRequiredService<IModuleServiceFactory>();
+        var moduleServiceFactory = serviceProvider.GetRequiredService<IModuleServiceFactory>();
         IServiceProvider moduleServiceProvider = moduleServiceFactory.CreateModuleServiceProvider(targetModule);
         
         ILogger moduleLogger = moduleServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -113,11 +112,11 @@ internal class Program
         IModuleContext moduleContext = new ModuleContext(moduleServiceProvider, moduleLogger, CancellationToken.None);
 
         string[] moduleArgs = args.Skip(1).ToArray();
-        logger.LogInformation("Executing module {ModuleName}", targetModule.Name);
+        logger.LogDebug("Executing module {ModuleName}", targetModule.Name);
 
         ExitCode result = await targetModule.ExecuteAsync(moduleContext, moduleArgs);
         
-        logger.LogInformation("Module execution completed with result: {Result}", result);
+        logger.LogDebug("Module execution completed with result: {Result}", result);
         return result;
     }
 }
