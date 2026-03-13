@@ -16,10 +16,10 @@ if ($ModuleName -notmatch '^[A-Za-z][A-Za-z0-9]*$') {
 
 $ProjectName = "ChimeraKit.Module.$ModuleName"
 $ProjectDir = "src\$ProjectName"
-$NetVersion = "net8.0"
+$NetVersion = "net10.0"
 
-Write-Host "Creating new module: $ProjectName" -ForegroundColor Green
-Write-Host "Description: $Description"
+Write-Host "Creating new module: $ProjectName" -ForegroundColor DarkCyan
+Write-Host "Description: $Description" -ForegroundColor DarkCyan
 Write-Host ""
 
 if (Test-Path $ProjectDir) {
@@ -28,15 +28,15 @@ if (Test-Path $ProjectDir) {
 }
 
 try {
-    Write-Host "Creating project..." -ForegroundColor Yellow
+    Write-Host "Creating project..." -ForegroundColor DarkCyan
     dotnet new classlib -n $ProjectName -o $ProjectDir
     if ($LASTEXITCODE -ne 0) { throw "Failed to create project" }
 
-    Write-Host "Adding to solution..." -ForegroundColor Yellow
+    Write-Host "Adding to solution..." -ForegroundColor DarkCyan
     dotnet sln add "$ProjectDir\$ProjectName.csproj" --in-root
     if ($LASTEXITCODE -ne 0) { throw "Failed to add to solution" }
 
-    Write-Host "Updating project file..." -ForegroundColor Yellow
+    Write-Host "Updating project file..." -ForegroundColor DarkCyan
     $projectContent = @"
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -57,15 +57,6 @@ try {
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
   </ItemGroup>
-  
-  <Target Name="CopyToPluginDir" AfterTargets="Build" Condition="'`$(Configuration)' == 'Release'">
-    <ItemGroup>
-      <ProjectFiles Include="`$(OutDir)\*" />
-    </ItemGroup>
-    
-    <Copy SourceFiles="@(ProjectFiles)" DestinationFolder="..\..\release\modules\`$(AssemblyName)" SkipUnchangedFiles="true" />
-    <Message Text="Copied project files" Importance="high" />
-  </Target>
 
 </Project>
 "@
@@ -76,7 +67,7 @@ try {
     New-Item -ItemType Directory -Path "$ProjectDir\Cli" -Force | Out-Null
 
     # Config Class
-    Write-Host "Creating configuration class..." -ForegroundColor Yellow
+    Write-Host "Creating configuration class..." -ForegroundColor DarkCyan
     $configContent = @"
 namespace $ProjectName.Configuration;
 
@@ -90,7 +81,7 @@ public class $($ModuleName)Configuration
     $configContent | Out-File -FilePath "$ProjectDir\Configuration\$($ModuleName)Configuration.cs" -Encoding UTF8
 
     # Cli arguments class
-    Write-Host "Creating cli argument class..." -ForegroundColor Yellow
+    Write-Host "Creating cli argument class..." -ForegroundColor DarkCyan
     $configContent = @"
 using CommandLine;
 
@@ -107,7 +98,7 @@ public class $($ModuleName)CliArguments
     $configContent | Out-File -FilePath "$ProjectDir\Cli\$($ModuleName)CliArguments.cs" -Encoding UTF8
 
     # Service interface and implementation
-    Write-Host "Creating service classes..." -ForegroundColor Yellow
+    Write-Host "Creating service classes..." -ForegroundColor DarkCyan
 	$serviceInterfaceContent = @"
 using $ProjectName.Cli;
 	
@@ -153,7 +144,7 @@ public class $($ModuleName)Service : I$($ModuleName)Service
     $serviceContent | Out-File -FilePath "$ProjectDir\Services\$($ModuleName)Service.cs" -Encoding UTF8
 
     # Create main module class
-    Write-Host "Creating main module class..." -ForegroundColor Yellow
+    Write-Host "Creating main module class..." -ForegroundColor DarkCyan
     $moduleContent = @"
 using CommandLine;
 using Microsoft.Extensions.Configuration;
@@ -231,7 +222,7 @@ public class $($ModuleName)Module : IModule
         Remove-Item $defaultFile
     }
 
-    Write-Host "Updating appsettings.json..." -ForegroundColor Yellow
+    Write-Host "Updating appsettings.json..." -ForegroundColor DarkCyan
     $appsettingsPath = "src\ChimeraKit.Host\appsettings.json"
     
     if (Test-Path $appsettingsPath) {
@@ -253,10 +244,10 @@ public class $($ModuleName)Module : IModule
         $appsettings.Core.AvailableModules += $newAvailableModule
         
         $appsettings | ConvertTo-Json -Depth 10 | Out-File -FilePath $appsettingsPath -Encoding UTF8
-        Write-Host "Added $ModuleName configuration to appsettings.json" -ForegroundColor Green
+        Write-Host "Added $ModuleName configuration to appsettings.json" -ForegroundColor DarkGreen
     }
     
-    Write-Host "Updating appsettings.Development.json..." -ForegroundColor Yellow
+    Write-Host "Updating appsettings.Development.json..." -ForegroundColor DarkCyan
     $appsettingsDevPath = "src\ChimeraKit.Host\appsettings.Development.json"
 
     if (Test-Path $appsettingsDevPath) {
@@ -270,27 +261,27 @@ public class $($ModuleName)Module : IModule
         $appsettingsDev.Core.AvailableModules += $newAvailableModule
 
         $appsettingsDev | ConvertTo-Json -Depth 10 | Out-File -FilePath $appsettingsDevPath -Encoding UTF8
-        Write-Host "Added $ModuleName configuration to appsettings.Development.json" -ForegroundColor Green
+        Write-Host "Added $ModuleName configuration to appsettings.Development.json" -ForegroundColor DarkGreen
     }
 
     if (-not $SkipBuild) {
-        Write-Host "Building solution..." -ForegroundColor Yellow
+        Write-Host "Building solution..." -ForegroundColor DarkCyan
         dotnet build
         if ($LASTEXITCODE -ne 0) { 
             Write-Warning "Build failed, but module was created successfully"
         } else {
-            Write-Host "Build completed successfully" -ForegroundColor Green
+            Write-Host "Build completed successfully" -ForegroundColor DarkGreen
         }
     }
 
     Write-Host ""
-    Write-Host "Module $ProjectName created successfully!" -ForegroundColor Green
-    Write-Host "Configuration section '$ModuleName' has been added to appsettings.json" -ForegroundColor Yellow
+    Write-Host "Module $ProjectName created successfully!" -ForegroundColor DarkGreen
+    Write-Host "Configuration section '$ModuleName' has been added to appsettings.json" -ForegroundColor DarkGreen
 } catch {
     Write-Error "Failed to create module: $_"
     
     if (Test-Path $ProjectDir) {
-        Write-Host "Cleaning up..." -ForegroundColor Yellow
+        Write-Host "Cleaning up..." -ForegroundColor DarkCyan
         Remove-Item $ProjectDir -Recurse -Force
     }
     
