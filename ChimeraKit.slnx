@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/SolutionItems/">
+    <File Path="./scripts/createNewModule.ps1" />
+    <File Path="./scripts/createRelease.ps1" />
+    <File Path=".gitignore" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="src/ChimeraKit.Core/ChimeraKit.Core.csproj" />
+  <Project Path="src/ChimeraKit.Host/ChimeraKit.Host.csproj" />
+  <Project Path="src/ChimeraKit.Module.ExamplePrepend/ChimeraKit.Module.ExamplePrepend.csproj" />
+  <Project Path="tests/ChimeraKit.Tests/ChimeraKit.Tests.csproj" />
+</Solution>
