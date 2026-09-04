@@ -2,7 +2,6 @@
 using ChimeraKit.Core.Abstractions;
 using ChimeraKit.Core.Configuration;
 using ChimeraKit.Core.Extensions;
-using ChimeraKit.Core.SharedServices;
 using ChimeraKit.Host.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,14 +33,14 @@ internal class Program
 
     private static IConfiguration BuildConfiguration()
     {
-        string environment = Environment.GetEnvironmentVariable("CHIMERAKIT_ENV") ?? "Development";
+        string environment = Environment.GetEnvironmentVariable("CHIMERAKIT_ENV") ?? "Production";
         return new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
             .AddJsonFile($"appsettings.{environment}.json", true)
             .Build();
     }
-    
+
     private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.ConfigureAndRegister<CoreConfiguration>(configuration, CoreConfiguration.SectionName);
@@ -60,18 +59,17 @@ internal class Program
         });
 
         services.AddSingleton<IModuleLoader, ModuleLoader>();
-        
-        // Add shared services
-        services.AddSingleton<IExampleCapitalizationService, ExampleExampleCapitalizationService>();
-        
+
+        services.AddSharedServices();
+
         services.AddSingleton<IModuleServiceFactory>(_ => new ModuleServiceFactory(services, configuration));
     }
 
     private static async Task<ExitCode> RunApplicationAsync(IServiceProvider serviceProvider, string[] args)
     {
         ILogger logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-        var moduleLoader = serviceProvider.GetRequiredService<IModuleLoader>();
-        
+        IModuleLoader moduleLoader = serviceProvider.GetRequiredService<IModuleLoader>();
+
         logger.LogDebug("Starting application execution");
 
         List<IModule> modules = moduleLoader.LoadModules();
@@ -102,20 +100,21 @@ internal class Program
             logger.LogError("Module {ModuleName} not found", targetModuleName);
             return ExitCode.Error;
         }
-        
-        var moduleServiceFactory = serviceProvider.GetRequiredService<IModuleServiceFactory>();
+
+        IModuleServiceFactory moduleServiceFactory = serviceProvider.GetRequiredService<IModuleServiceFactory>();
         IServiceProvider moduleServiceProvider = moduleServiceFactory.CreateModuleServiceProvider(targetModule);
-        
+
         ILogger moduleLogger = moduleServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger(targetModule.GetType());
 
-        IModuleContext moduleContext = new ModuleContext(moduleServiceProvider, moduleLogger, CancellationToken.None);
+        using ConsoleCancellationHandler cancellationHandler = new();
+        IModuleContext moduleContext = new ModuleContext(moduleServiceProvider, moduleLogger, cancellationHandler.Token);
 
         string[] moduleArgs = args.Skip(1).ToArray();
         logger.LogDebug("Executing module {ModuleName}", targetModule.Name);
 
         ExitCode result = await targetModule.ExecuteAsync(moduleContext, moduleArgs);
-        
+
         logger.LogDebug("Module execution completed with result: {Result}", result);
         return result;
     }

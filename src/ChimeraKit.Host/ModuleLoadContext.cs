@@ -14,6 +14,13 @@ public class ModuleLoadContext : AssemblyLoadContext
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
+        Assembly? shared = Default.Assemblies
+            .FirstOrDefault(assembly => assembly.GetName().Name == assemblyName.Name);
+        if (shared != null)
+        {
+            return shared;
+        }
+
         string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
         return assemblyPath != null ? LoadFromAssemblyPath(assemblyPath) : null;
     }

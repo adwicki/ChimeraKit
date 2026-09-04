@@ -40,24 +40,6 @@ try {
     $projectContent = @"
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>$NetVersion</TargetFramework>
-	<ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\ChimeraKit.Core\ChimeraKit.Core.csproj">
-      <Private>false</Private>
-      <ExcludeAssets>runtime</ExcludeAssets>
-    </ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
-  </ItemGroup>
-
 </Project>
 "@
     $projectContent | Out-File -FilePath "$ProjectDir\$ProjectName.csproj" -Encoding UTF8
@@ -101,12 +83,12 @@ public class $($ModuleName)CliArguments
     Write-Host "Creating service classes..." -ForegroundColor DarkCyan
 	$serviceInterfaceContent = @"
 using $ProjectName.Cli;
-	
+
 namespace $ProjectName.Services;
 
 public interface I$($ModuleName)Service
 {
-    Task ProcessAsync($($ModuleName)CliArguments args);
+    Task ProcessAsync($($ModuleName)CliArguments args, CancellationToken cancellationToken);
 }
 "@
 	$serviceInterfaceContent | Out-File -FilePath "$ProjectDir\Services\I$($ModuleName)Service.cs" -Encoding UTF8
@@ -132,12 +114,12 @@ public class $($ModuleName)Service : I$($ModuleName)Service
         _config = config;
     }
 
-    public async Task ProcessAsync($($ModuleName)CliArguments args)
+    public async Task ProcessAsync($($ModuleName)CliArguments args, CancellationToken cancellationToken)
     {
         _logger.LogInformation("$($ModuleName)Service processing: {Input}", args.Input);
 
         // TODO: Implement your module logic here
-        await Task.Delay(100); // Simulate processing
+        await Task.Delay(100, cancellationToken); // Simulate processing
     }
 }
 "@
@@ -146,27 +128,24 @@ public class $($ModuleName)Service : I$($ModuleName)Service
     # Create main module class
     Write-Host "Creating main module class..." -ForegroundColor DarkCyan
     $moduleContent = @"
-using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ChimeraKit.Core;
 using ChimeraKit.Core.Abstractions;
 using ChimeraKit.Core.Extensions;
-using ChimeraKit.Core.Exceptions;
-using ChimeraKit.Core.SharedServices;
 using $ProjectName.Configuration;
 using $ProjectName.Services;
 using $ProjectName.Cli;
 
 namespace $ProjectName;
 
-public class $($ModuleName)Module : IModule
+public class $($ModuleName)Module : ModuleBase<$($ModuleName)CliArguments>
 {
-    public string Name => "$ModuleName";
-    public string Description => "$Description";
+    public override string Name => "$ModuleName";
+    public override string Description => "$Description";
 
-    public void ConfigureModuleServices(IServiceCollection services, IConfiguration configuration)
+    public override void ConfigureModuleServices(IServiceCollection services, IConfiguration configuration)
     {
         services.ConfigureAndRegister<$($ModuleName)Configuration>(configuration,
             $($ModuleName)Configuration.SectionName);
@@ -174,43 +153,17 @@ public class $($ModuleName)Module : IModule
         services.AddTransient<I$($ModuleName)Service, $($ModuleName)Service>();
     }
 
-    public async Task<ExitCode> ExecuteAsync(IModuleContext context, string[] args)
+    // ModuleBase handles argument parsing, exception-to-exit-code mapping and cancellation, so the
+    // module only supplies its domain logic. Throw a ChimeraKitException for a known domain failure
+    // (reported message-only); anything else is treated as a bug and logged with a stack trace.
+    protected override async Task<ExitCode> RunAsync($($ModuleName)CliArguments args, IModuleContext context)
     {
-        ILogger logger = context.Logger;
-        logger.LogInformation("Starting {ModuleName} execution", Name);
-        
         I$($ModuleName)Service moduleService = context.GetService<I$($ModuleName)Service>();
-        $($ModuleName)CliArguments cliArgs = ParseCliArguments(args);
 
-        try
-        {
-            await moduleService.ProcessAsync(cliArgs);
-            logger.LogInformation("Module {ModuleName} completed successfully", Name);
-            return ExitCode.Ok;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Module {ModuleName} execution failed", Name);
-            return ExitCode.Error;
-        }
-    }
-    
-    private static $($ModuleName)CliArguments ParseCliArguments(string[] args)
-    {
-        ParserResult<$($ModuleName)CliArguments> parseResult = Parser.Default
-            .ParseArguments<$($ModuleName)CliArguments>(args);
-            
-        if (parseResult.Errors.Any())
-        {
-            throw new CliParseException(
-                $"Error parsing cli args: {string.Join(Environment.NewLine, parseResult.Errors)}");
-        }
-        
-        $($ModuleName)CliArguments parsedArgs = parseResult.Value;
-        
-        // Do more validation
-        
-        return parsedArgs;
+        await moduleService.ProcessAsync(args, context.CancellationToken);
+        context.Logger.LogInformation("Module {ModuleName} completed successfully", Name);
+
+        return ExitCode.Ok;
     }
 }
 "@

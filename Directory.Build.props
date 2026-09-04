@@ -1,0 +1,29 @@
+﻿<Project>
+
+  <!-- Conventions shared by every project in the solution. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!--
+    Every ChimeraKit.Module.* project is a dynamically-loaded plugin that shares the Core contract
+    with the host. Conditioning the plugin wiring on the project name means a new module gets the
+    whole pattern for free and its .csproj can stay empty.
+
+    Private="false" + ExcludeAssets="runtime" keep ChimeraKit.Core.dll (and its transitive runtime
+    assets) out of the module's output folder, so at runtime the shared contract resolves to the
+    host's single instance instead of a second copy - see ModuleLoadContext. This is load-bearing,
+    not tidiness.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('ChimeraKit.Module.'))">
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.StartsWith('ChimeraKit.Module.'))">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src\ChimeraKit.Core\ChimeraKit.Core.csproj"
+                      Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

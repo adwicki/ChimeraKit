@@ -51,10 +51,14 @@ The following configurations are shared between all modules or required by the `
 The `Core` configuration section specifies the modules available to the kit. The `ModuleRoot` points to 
 the directory, where the module dlls (and their dependencies) are built. 
 
-The solution is configured such that building it with the `Release` configuration will put the host application in the 
-`/<root>/release/` directory and all modules in the subdirectory `/<root>/release/modules/`. Also, creating a module 
-with the `.\createNewModule.ps1` script (see below), will automatically update the configuration to include the new 
-module.
+When the `CHIMERAKIT_ENV` environment variable is not set, the host loads the base `appsettings.json` (this is the 
+`Production` default). During development the `ChimeraKit.Host` launch profiles set `CHIMERAKIT_ENV=Development`, so the 
+`appsettings.Development.json` overlay is applied and modules are loaded straight from their build output.
+
+A distributable release is produced by the `scripts\createRelease.ps1` script, which publishes the host into a 
+`/<root>/release/` directory and each module into `/<root>/release/modules/`. The set of modules to ship is read from 
+the host's `appsettings.json`, so the release can never disagree with what the host will try to load. Creating a module 
+with the `.\createNewModule.ps1` script (see below) automatically updates the configuration to include the new module.
 
 ## Running a Module
 A module can be run by invoking the `ChimeraKit.Host.exe` and passing the `ModuleName` and (potential) cli arguments 

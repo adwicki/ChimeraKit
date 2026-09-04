@@ -1,23 +1,22 @@
 ﻿using ChimeraKit.Core;
-using CommandLine;
+using ChimeraKit.Core.Abstractions;
+using ChimeraKit.Core.Exceptions;
+using ChimeraKit.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ChimeraKit.Core.Abstractions;
-using ChimeraKit.Core.Extensions;
-using ChimeraKit.Core.Exceptions;
 using ChimeraKit.Module.ExamplePrepend.Configuration;
 using ChimeraKit.Module.ExamplePrepend.Services;
 using ChimeraKit.Module.ExamplePrepend.Cli;
 
 namespace ChimeraKit.Module.ExamplePrepend;
 
-public class ExamplePrependModule : IModule
+public class ExamplePrependModule : ModuleBase<ExamplePrependCliArguments>
 {
-    public string Name => "ExamplePrepend";
-    public string Description => "A module that prepends a string and capitalizes it.";
+    public override string Name => "ExamplePrepend";
+    public override string Description => "Prepend a prefix-string to an input-string and capitalize the whole thing.";
 
-    public void ConfigureModuleServices(IServiceCollection services, IConfiguration configuration)
+    public override void ConfigureModuleServices(IServiceCollection services, IConfiguration configuration)
     {
         services.ConfigureAndRegister<ExamplePrependConfiguration>(configuration,
             ExamplePrependConfiguration.SectionName);
@@ -25,45 +24,22 @@ public class ExamplePrependModule : IModule
         services.AddTransient<IExamplePrependService, ExamplePrependService>();
     }
 
-    public async Task<ExitCode> ExecuteAsync(IModuleContext context, string[] args)
+    protected override async Task<ExitCode> RunAsync(ExamplePrependCliArguments args, IModuleContext context)
     {
-        ILogger logger = context.Logger;
-        var moduleService = context.GetService<IExamplePrependService>();
-        ExamplePrependCliArguments cliArgs = ParseCliArguments(args);
+        IExamplePrependService moduleService = context.GetService<IExamplePrependService>();
 
-        logger.LogDebug("Starting {ModuleName} execution", Name);
+        string result = await moduleService.ProcessAsync(args, context.CancellationToken);
+        context.Logger.LogInformation("ExamplePrepend Result: {Result}", result);
 
-        try
-        {
-            string result = await moduleService.ProcessAsync(cliArgs, context.CancellationToken);
-            
-            logger.LogInformation("ExamplePrepend Result: {Result}", result);
-
-            logger.LogDebug("Module {ModuleName} completed successfully", Name);
-            return ExitCode.Ok;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Module {ModuleName} execution failed", Name);
-            return ExitCode.Error;
-        }
+        return ExitCode.Ok;
     }
-    
-    private static ExamplePrependCliArguments ParseCliArguments(string[] args)
+
+    protected override void ValidateArguments(ExamplePrependCliArguments args, IModuleContext context)
     {
-        ParserResult<ExamplePrependCliArguments> parseResult = Parser.Default
-            .ParseArguments<ExamplePrependCliArguments>(args);
-            
-        if (parseResult.Errors.Any())
+        // Example argument validation logic
+        if (args.Input.Length <= 1)
         {
-            throw new CliParseException(
-                $"Error parsing cli args: {string.Join(Environment.NewLine, parseResult.Errors)}");
+            throw new CliParseException("Input string must be at least 2 characters long.");
         }
-        
-        ExamplePrependCliArguments parsedArgs = parseResult.Value;
-        
-        // Do more validation
-        
-        return parsedArgs;
     }
 }
